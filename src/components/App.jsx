@@ -1,75 +1,49 @@
-import React, { Component } from "react";
-import { ContactForm } from './ContactForm/ContactForm'
-import { ContactList } from './ContactList/ContactList'
-import { Filter } from './Filter/Filter'
-import css from './ContactForm/ContactForm.module.css'
-  const CONTACTS_KEY = 'Contact'
+import {useState, useEffect} from "react";
+import { ContactForm } from './ContactForm/ContactForm';
+import { ContactList } from './ContactList/ContactList';
+import { Filter } from './Filter/Filter';
+import css from './ContactForm/ContactForm.module.css';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
-export class App extends Component {
+const CONTACTS_KEY = 'Contact';
 
-  state = {
-    contacts: [
-      { id: "id-1", name: "Rosie Simpson", number: "459-12-56" },
-      { id: "id-2", name: "Hermione Kline", number: "443-89-12" },
-      { id: "id-3", name: "Eden Clements", number: "645-17-79" },
-      { id: "id-4", name: "Annie Copeland", number: "227-91-26" },],
-    filter: ''
-  }
+export const App = () => {
+  const [contacts, setContacts] = useState(() => {
+    const localStorageContacts = localStorage.getItem(CONTACTS_KEY);
+    return JSON.parse(localStorageContacts) || [];
+  });
+  const [filter, setFilter] = useState('');
 
-    componentDidMount() {
-    const savedContacts = localStorage.getItem(CONTACTS_KEY)
+  useEffect(() => {
+    return localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts))
+  }, [contacts])
 
-    if (savedContacts?.length > 0) {
-      this.setState({
-      contacts: JSON.parse(savedContacts)
-    })
-    }
-  }
-  
-  componentDidUpdate(prevState) {
-    const { contacts } = this.state
-    
-    if (prevState.contacts !== contacts) {
-      localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts))
-    }
-  }
+  const isDuplicate = ({ name }) => {
 
-  isDuplicate = ({ name }) => {
-    const { contacts } = this.state
-    const result = contacts.find(contactItem => contactItem.name.toLowerCase() === name.toLowerCase())
+    const result = contacts.find(contactItem => contactItem.name.toLowerCase() === name.toLowerCase());
     return result
-  }
-
-  addContact = (contactObject) => {
-    if (this.isDuplicate(contactObject)) {
-      return alert(`${contactObject.name} is alredy in contacts`)
+  };
+  const addContact = (contactObject) => {
+    if (isDuplicate(contactObject)) {
+      return alert(`${contactObject.name} is alredy in contacts`);
+      // Notify.failure(`${contactObject.name} is alredy in contacts`);
+    } else {
+      Notify.success('New contact added');
     }
 
-    return this.setState(prevState => ({
-      contacts: [...prevState.contacts, contactObject],
-    }))
-  }
+    return setContacts((p) => [...p, contactObject]);
+  };
 
-  handlerFilterChange = (e) => {
-    this.setState({
-      filter: e.currentTarget.value
-    }) 
-  }
+  const handlerFilterChange = (e) => {
+    setFilter(e.currentTarget.value)
+  };
 
-  deleteContact = (id) => {
-    const { contacts } = this.state
-    const newContacts = contacts.filter(contact => contact.id !== id)
-    return this.setState({
-      contacts: newContacts
-    })    
-  }
- 
+  const deleteContact = (id) => {
 
-  render() {
-    const { contacts, filter } = this.state
-    const {addContact, handlerFilterChange, deleteContact} = this
-
-    const filtredContacts = contacts.filter(({name}) => name.toLowerCase().includes(filter.toLowerCase()))
+    const newContacts = contacts.filter(contact => contact.id !== id);
+    setContacts(newContacts);
+  };
+  const filtredContacts = contacts.filter(({ name }) => name.toLowerCase().includes(filter.toLowerCase()));
     
     return (
       <div className={ css.div}>
@@ -81,5 +55,4 @@ export class App extends Component {
       <ContactList contacts={filtredContacts} handleClick={deleteContact} />      
     </div>
   );
-  }
 };
